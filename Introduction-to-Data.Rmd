@@ -1,0 +1,126 @@
+---
+title: "Lab 2: Introduction to Data"
+author: "Preston Peck"
+date: "`r Sys.Date()`"
+output: openintro::lab_report
+---
+
+# Introduction to Data
+
+<https://htmlpreview.github.io/?https://github.com/jbryer/DATA606/blob/master/inst/labs/Lab2/Lab2_intro_to_data.html>
+
+```{r load-packages, message=FALSE}
+library(tidyverse)
+library(openintro)
+library(psych)
+```
+
+### Exercise 1
+
+The difference between the 3 histograms are binwidth, which corresponds to the span for ranges that data will be placed into.\
+The higher the binwidth, the wider and more data per bar, which may end up masking the data's nuance if too high.\
+the lower the binwidth, the narrower and less data per bar, which may end up visually cluttering the data if too low.\
+
+In the 1st histogram, when not declared, binwidth defaults to 30. Some ranges will be (-1,30], (30,60], (60,90], (90,120], etc.\
+In the 2nd histogram, binwidth is 15. Some ranges will be (-1,15], (15,30], (30,45], (45,60], etc.\
+In the 3rd histogram, binwidth is 150. Some ranges will be (-1,150], (150,300], (300,450], (450,600], etc.\
+
+```{r dep-delay-histograms}
+ggplot(data = nycflights, aes(x = dep_delay)) +
+  geom_histogram()
+
+ggplot(data = nycflights, aes(x = dep_delay)) +
+  geom_histogram(binwidth = 15)
+
+ggplot(data = nycflights, aes(x = dep_delay)) +
+  geom_histogram(binwidth = 150)
+```
+
+### Exercise 2
+
+68 flights are heading to San Francisco in February
+
+```{r sfo-feb-flights-data-frame}
+sfo_feb_flights <- nycflights %>%
+  filter(dest == "SFO", month == 2)
+
+nrow(sfo_feb_flights)
+```
+
+### Exercise 3
+
+The vast majority of flights arrive within +/-10 minutes (7.1 minutes later on average) of their expected arrival time. When treating the top and bottom 10% as outliers, the average flight is marginally early (.79 minutes)
+
+```{r arrival_delays_summary}
+nycflights$arr_delay %>%
+  describe
+
+ggplot(data = nycflights, aes(x = arr_delay)) +
+  geom_histogram(binwidth = 5, aes(y = ..density..)) +
+  geom_density() +
+  xlim(-100, 300)
+```
+
+### Exercise 4
+
+UA has the biggest range, but UA and DL are both tied with the highest interquartile range
+
+```{r median-and-interquartile-range-by-carrier}
+sfo_feb_flights$arr_delay %>%
+  describeBy(group = sfo_feb_flights$carrier)
+
+sfo_feb_flights %>%
+  group_by(carrier) %>%
+  summarise(iqr = IQR(arr_delay))
+```
+
+### Exercise 5
+
+Mean would be the better representation of a set since its a calculated weighted value that can take into consideration the influence of clusters which median isn't able to account for since it's based on middle ordinal position regardless of patterns on either side of it.\
+Based off mean, October would be the best month to fly to minimize departure delays.\
+Based off median, September or October are the best months to fly to minimize departure delays.
+
+```{r}
+nycflights$dep_delay %>%
+  describeBy(group = nycflights$month)
+```
+
+### Exercise 6
+
+LGA has the highest on time departure rate at 72.8%, which is a little more than 3% better than JFK in 2nd, making it the obvious pick if you want the best odds of departing on time.
+
+```{r}
+nycflights <- nycflights %>%
+  mutate(dep_type = ifelse(dep_delay < 5, "on time", "delayed"))
+
+nycflights %>%
+  group_by(origin) %>%
+  summarise(ot_dep_rate = sum(dep_type == "on time") / n()) %>%
+  arrange(desc(ot_dep_rate))
+```
+
+### Exercise 7
+
+```{r avg-speed-by-hour}
+nycflights <- nycflights %>%
+  mutate(avg_speed = distance / (air_time / 60))
+```
+
+### Exercise 8
+
+```{r avg-speed-by-distance-scatterplot}
+ggplot(nycflights, aes(x = distance, y = avg_speed)) +
+  geom_point()
+```
+
+### Exercise 9
+
+The latest you can depart and still arrive on time looks to be around 66 minutes
+
+```{r arr-delay-by-dep-delay-scatterplot}
+aaDlUaFlights <- nycflights %>% 
+  filter(carrier %in% c("AA", "DL", "UA"))
+         
+ggplot(aaDlUaFlights, aes(x = dep_delay, y = arr_delay, color = carrier)) +
+  geom_point()
+```
