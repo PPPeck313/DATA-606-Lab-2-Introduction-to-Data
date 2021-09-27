@@ -1,5 +1,5 @@
 ---
-title: "Lab 2: Introduction to Data"
+title: "DATA 607 - Assignment 2 - Introduction to Data"
 author: "Preston Peck"
 date: "`r Sys.Date()`"
 output: openintro::lab_report
